@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iPhone Display</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-start:   #0f0c29;
+      --bg-mid:     #302b63;
+      --bg-end:     #24243e;
+      --frame:      #1a1a1a;
+      --frame-edge: #2e2e2e;
+      --frame-shine:#3d3d3d;
+      --btn:        #2a2a2a;
+      --btn-edge:   #111;
+      --screen-bg:  #000;
+      --island:     #000;
+      --text-light: rgba(255,255,255,0.85);
+      --accent:     #6e8efb;
+      --accent2:    #a777e3;
+      --transition: 0.45s cubic-bezier(.4,0,.2,1);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, var(--bg-start), var(--bg-mid), var(--bg-end));
+      color: var(--text-light);
+      overflow-x: hidden;
+    }
+
+    /* ── Layout ───────────────────────────────────────────────── */
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2.5rem;
+      padding: 3rem 1rem;
+    }
+
+    .headline {
+      text-align: center;
+      user-select: none;
+    }
+
+    .headline h1 {
+      font-size: clamp(1.6rem, 4vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #fff 30%, var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .headline p {
+      margin-top: .5rem;
+      font-size: .95rem;
+      opacity: .6;
+    }
+
+    /* ── Scene / perspective wrapper ──────────────────────────── */
+    .scene {
+      perspective: 1200px;
+      perspective-origin: 50% 40%;
+    }
+
+    /* ── Phone wrapper — handles 3-D rotation ─────────────────── */
+    .phone-wrapper {
+      transform-style: preserve-3d;
+      transform: rotateY(-18deg) rotateX(4deg);
+      transition: transform var(--transition), filter var(--transition);
+      filter: drop-shadow(0 40px 60px rgba(0,0,0,.65))
+              drop-shadow(0 10px 20px rgba(110,142,251,.25));
+      cursor: pointer;
+    }
+
+    .phone-wrapper:hover,
+    .phone-wrapper.flat {
+      transform: rotateY(0deg) rotateX(0deg);
+      filter: drop-shadow(0 50px 80px rgba(0,0,0,.55))
+              drop-shadow(0 0 40px rgba(110,142,251,.35));
+    }
+
+    .phone-wrapper.landscape {
+      transform: rotateZ(90deg) rotateY(-18deg) rotateX(4deg);
+    }
+
+    .phone-wrapper.landscape:hover {
+      transform: rotateZ(90deg) rotateY(0deg) rotateX(0deg);
+    }
+
+    /* ── iPhone frame ─────────────────────────────────────────── */
+    .iphone {
+      position: relative;
+      width: 300px;
+      height: 620px;
+      background: linear-gradient(160deg, var(--frame-shine) 0%, var(--frame) 40%, var(--frame-edge) 100%);
+      border-radius: 52px;
+      padding: 14px;
+
+      /* Titanium-like multi-stop border */
+      border: 1px solid transparent;
+      background-clip: padding-box;
+      box-shadow:
+        /* inner bevel */
+        inset 0 1px 0 rgba(255,255,255,.12),
+        inset 0 -1px 0 rgba(0,0,0,.3),
+        /* outer band */
+        0 0 0 1px rgba(255,255,255,.06),
+        0 0 0 2px rgba(0,0,0,.5),
+        /* main shadow */
+        0 30px 60px rgba(0,0,0,.7),
+        0 8px 16px rgba(0,0,0,.4);
+    }
+
+    /* Glossy edge ring */
+    .iphone::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 54px;
+      background: linear-gradient(145deg,
+        rgba(255,255,255,.18) 0%,
+        transparent 40%,
+        rgba(255,255,255,.06) 60%,
+        transparent 80%,
+        rgba(255,255,255,.12) 100%
+      );
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* ── Side buttons ──────────────────────────────────────────── */
+    /* Power button — right side */
+    .btn-power {
+      position: absolute;
+      right: -3px;
+      top: 155px;
+      width: 4px;
+      height: 70px;
+      background: linear-gradient(to right, var(--btn-edge), var(--btn), var(--btn-edge));
+      border-radius: 0 3px 3px 0;
+      box-shadow: inset -1px 0 0 rgba(255,255,255,.1);
+    }
+
+    /* Volume up */
+    .btn-vol-up {
+      position: absolute;
+      left: -3px;
+      top: 130px;
+      width: 4px;
+      height: 42px;
+      background: linear-gradient(to left, var(--btn-edge), var(--btn), var(--btn-edge));
+      border-radius: 3px 0 0 3px;
+      box-shadow: inset 1px 0 0 rgba(255,255,255,.1);
+    }
+
+    /* Volume down */
+    .btn-vol-down {
+      position: absolute;
+      left: -3px;
+      top: 184px;
+      width: 4px;
+      height: 42px;
+      background: linear-gradient(to left, var(--btn-edge), var(--btn), var(--btn-edge));
+      border-radius: 3px 0 0 3px;
+      box-shadow: inset 1px 0 0 rgba(255,255,255,.1);
+    }
+
+    /* Mute / Action button */
+    .btn-mute {
+      position: absolute;
+      left: -3px;
+      top: 96px;
+      width: 4px;
+      height: 26px;
+      background: linear-gradient(to left, var(--btn-edge), var(--btn), var(--btn-edge));
+      border-radius: 3px 0 0 3px;
+    }
+
+    /* ── Screen ────────────────────────────────────────────────── */
+    .screen {
+      width: 100%;
+      height: 100%;
+      background: var(--screen-bg);
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── Dynamic Island ────────────────────────────────────────── */
+    .dynamic-island {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 34px;
+      background: var(--island);
+      border-radius: 20px;
+      z-index: 5;
+      transition: width .3s ease, height .3s ease, border-radius .3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .dynamic-island .cam {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #1c1c1c;
+      border: 1.5px solid #2a2a2a;
+      box-shadow: inset 0 0 3px rgba(80,160,255,.3);
+    }
+
+    .dynamic-island .dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #1a3a4a;
+    }
+
+    /* ── Wallpaper / screen content ──────────────────────────────*/
+    .wallpaper {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 30% 20%, #1a1a6e 0%, #0a0a2e 40%, #000 100%);
+      overflow: hidden;
+    }
+
+    /* Animated aurora blobs */
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(48px);
+      opacity: .55;
+      animation: drift 8s ease-in-out infinite alternate;
+    }
+
+    .blob-1 {
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, #6e8efb, transparent);
+      top: 5%; left: -20%;
+      animation-delay: 0s;
+    }
+
+    .blob-2 {
+      width: 180px; height: 180px;
+      background: radial-gradient(circle, #a777e3, transparent);
+      top: 30%; right: -15%;
+      animation-delay: -2.5s;
+    }
+
+    .blob-3 {
+      width: 150px; height: 150px;
+      background: radial-gradient(circle, #3de0c8, transparent);
+      bottom: 20%; left: 5%;
+      animation-delay: -5s;
+    }
+
+    @keyframes drift {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(18px, 22px) scale(1.12); }
+    }
+
+    /* ── Status bar ──────────────────────────────────────────────*/
+    .status-bar {
+      position: absolute;
+      top: 0;
+      left: 0; right: 0;
+      height: 54px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 24px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #fff;
+      z-index: 4;
+    }
+
+    .status-time {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -.3px;
+    }
+
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* SVG icons inline */
+    .icon { display: inline-block; }
+
+    /* ── App grid ────────────────────────────────────────────────*/
+    .app-grid {
+      position: absolute;
+      bottom: 80px;
+      left: 16px; right: 16px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      z-index: 3;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      transition: transform .2s ease;
+    }
+
+    .app:hover .app-icon { transform: scale(1.12); }
+
+    .app-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      transition: transform .2s ease;
+      box-shadow: 0 3px 10px rgba(0,0,0,.4);
+    }
+
+    .app-label {
+      font-size: 9px;
+      color: rgba(255,255,255,.85);
+      text-shadow: 0 1px 3px rgba(0,0,0,.8);
+      white-space: nowrap;
+    }
+
+    /* App colours */
+    .app-camera  { background: linear-gradient(135deg, #1c1c1c, #3a3a3a); }
+    .app-maps    { background: linear-gradient(135deg, #34c759, #1a7a30); }
+    .app-music   { background: linear-gradient(135deg, #fc3c44, #8b0000); }
+    .app-photos  { background: linear-gradient(135deg, #ff9f0a, #ff375f, #bf5af2, #30d158); }
+    .app-safari  { background: linear-gradient(135deg, #0a84ff, #006adc); }
+    .app-mail    { background: linear-gradient(135deg, #0a84ff, #004a9f); }
+    .app-msg     { background: linear-gradient(135deg, #30d158, #1a7a30); }
+    .app-settings{ background: linear-gradient(135deg, #636366, #3a3a3c); }
+
+    /* ── Dock ────────────────────────────────────────────────────*/
+    .dock {
+      position: absolute;
+      bottom: 10px;
+      left: 14px; right: 14px;
+      height: 64px;
+      background: rgba(255,255,255,.12);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      z-index: 4;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .dock .app-icon {
+      width: 44px;
+      height: 44px;
+    }
+
+    /* ── Home indicator ──────────────────────────────────────────*/
+    .home-indicator {
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 4px;
+      background: rgba(255,255,255,.55);
+      border-radius: 3px;
+      z-index: 6;
+    }
+
+    /* ── Controls ────────────────────────────────────────────────*/
+    .controls {
+      display: flex;
+      gap: .75rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: .6rem 1.4rem;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      color: #fff;
+      font-size: .85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .2s, transform .15s, box-shadow .2s;
+      backdrop-filter: blur(8px);
+      user-select: none;
+    }
+
+    .btn:hover {
+      background: rgba(255,255,255,.18);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0,0,0,.3);
+    }
+
+    .btn:active { transform: scale(.97); }
+
+    .btn.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-color: transparent;
+      box-shadow: 0 4px 16px rgba(110,142,251,.4);
+    }
+
+    /* ── Color selector ──────────────────────────────────────────*/
+    .color-selector {
+      display: flex;
+      gap: .6rem;
+      align-items: center;
+    }
+
+    .color-swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color .2s, transform .2s;
+    }
+
+    .color-swatch:hover, .color-swatch.selected {
+      border-color: #fff;
+      transform: scale(1.15);
+    }
+
+    .swatch-black    { background: #1a1a1a; }
+    .swatch-silver   { background: linear-gradient(135deg, #c8c8c8, #e8e8e8); }
+    .swatch-gold     { background: linear-gradient(135deg, #c8a96e, #f0d08a); }
+    .swatch-blue     { background: linear-gradient(135deg, #3a5f8a, #5a8aba); }
+    .swatch-titanium { background: linear-gradient(135deg, #8a8070, #b0a898); }
+
+    /* ── Info strip ──────────────────────────────────────────────*/
+    .info-strip {
+      display: flex;
+      gap: 2rem;
+      font-size: .8rem;
+      opacity: .55;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    /* ── Responsive ──────────────────────────────────────────────*/
+    @media (max-width: 420px) {
+      .iphone { width: 240px; height: 496px; border-radius: 42px; }
+      .screen { border-radius: 32px; }
+      .iphone::before { border-radius: 44px; }
+      .dynamic-island { width: 96px; height: 28px; }
+      .app-grid { bottom: 72px; gap: 12px; }
+      .app-icon { width: 42px; height: 42px; font-size: 18px; }
+      .dock { height: 56px; }
+      .dock .app-icon { width: 38px; height: 38px; }
+      .btn-power { top: 128px; height: 58px; }
+      .btn-vol-up { top: 108px; height: 36px; }
+      .btn-vol-down { top: 156px; height: 36px; }
+      .btn-mute { top: 80px; height: 22px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Headline -->
+  <header class="headline">
+    <h1>iPhone 16 Pro</h1>
+    <p>Titanium. Precision. Power.</p>
+  </header>
+
+  <!-- 3-D scene -->
+  <div class="scene">
+    <div class="phone-wrapper" id="phoneWrapper">
+      <div class="iphone" id="iphone">
+
+        <!-- Side buttons -->
+        <div class="btn-power"></div>
+        <div class="btn-vol-up"></div>
+        <div class="btn-vol-down"></div>
+        <div class="btn-mute"></div>
+
+        <!-- Screen -->
+        <div class="screen">
+
+          <!-- Wallpaper -->
+          <div class="wallpaper">
+            <div class="blob blob-1"></div>
+            <div class="blob blob-2"></div>
+            <div class="blob blob-3"></div>
+          </div>
+
+          <!-- Dynamic Island -->
+          <div class="dynamic-island" id="island">
+            <div class="cam"></div>
+            <div class="dot"></div>
+          </div>
+
+          <!-- Status bar -->
+          <div class="status-bar">
+            <span class="status-time" id="clock">9:41</span>
+            <div class="status-icons">
+              <!-- Signal bars -->
+              <svg width="17" height="12" viewBox="0 0 17 12" fill="white" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0"  y="8" width="3" height="4" rx=".8"/>
+                <rect x="4.5" y="5.5" width="3" height="6.5" rx=".8"/>
+                <rect x="9"  y="3"  width="3" height="9" rx=".8"/>
+                <rect x="13.5" y="0" width="3" height="12" rx=".8"/>
+              </svg>
+              <!-- Wi-Fi -->
+              <svg width="16" height="12" viewBox="0 0 16 12" fill="white" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/>
+                <path d="M3.5 6C5 4.5 6.9 3.5 8 3.5s3 1 4.5 2.5" stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+                <path d="M1 3.5C3.2 1.3 5.5 0 8 0s4.8 1.3 7 3.5" stroke="white" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".6"/>
+              </svg>
+              <!-- Battery -->
+              <svg width="25" height="12" viewBox="0 0 25 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x=".5" y=".5" width="21" height="11" rx="3.5" stroke="white" stroke-opacity=".4"/>
+                <rect x="2" y="2" width="16" height="8" rx="2" fill="white"/>
+                <path d="M23 4v4a2 2 0 0 0 0-4z" fill="white" opacity=".4"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- App grid -->
+          <div class="app-grid">
+            <div class="app">
+              <div class="app-icon app-camera">📷</div>
+              <span class="app-label">Camera</span>
+            </div>
+            <div class="app">
+              <div class="app-icon app-maps">🗺️</div>
+              <span class="app-label">Maps</span>
+            </div>
+            <div class="app">
+              <div class="app-icon app-music">🎵</div>
+              <span class="app-label">Music</span>
+            </div>
+            <div class="app">
+              <div class="app-icon app-photos">🖼️</div>
+              <span class="app-label">Photos</span>
+            </div>
+            <div class="app">
+              <div class="app-icon app-safari">🧭</div>
+              <span class="app-label">Safari</span>
+            </div>
+            <div class="app">
+              <div class="app-icon app-mail">✉️</div>
+              <span class="app-label">Mail</span>
+            </div>
+            <div class="app">
+              <div class="app-icon app-msg">💬</div>
+              <span class="app-label">Messages</span>
+            </div>
+            <div class="app">
+              <div class="app-icon app-settings">⚙️</div>
+              <span class="app-label">Settings</span>
+            </div>
+          </div>
+
+          <!-- Dock -->
+          <div class="dock">
+            <div class="app-icon app-safari">🧭</div>
+            <div class="app-icon app-msg">💬</div>
+            <div class="app-icon app-mail">✉️</div>
+            <div class="app-icon app-music">🎵</div>
+          </div>
+
+          <!-- Home indicator -->
+          <div class="home-indicator"></div>
+
+        </div><!-- /screen -->
+      </div><!-- /iphone -->
+    </div><!-- /phone-wrapper -->
+  </div><!-- /scene -->
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn" id="btnFlat">View Flat</button>
+    <button class="btn" id="btnLandscape">Landscape</button>
+    <button class="btn" id="btnSpin">Spin</button>
+  </div>
+
+  <!-- Color selector -->
+  <div class="color-selector" aria-label="Choose iPhone color">
+    <div class="color-swatch swatch-black selected"    data-color="black"    title="Black Titanium"></div>
+    <div class="color-swatch swatch-silver"             data-color="silver"   title="White Titanium"></div>
+    <div class="color-swatch swatch-gold"               data-color="gold"     title="Desert Titanium"></div>
+    <div class="color-swatch swatch-blue"               data-color="blue"     title="Blue Titanium"></div>
+    <div class="color-swatch swatch-titanium"           data-color="titanium" title="Natural Titanium"></div>
+  </div>
+
+  <!-- Info -->
+  <div class="info-strip">
+    <span>6.3″ Super Retina XDR</span>
+    <span>A18 Pro chip</span>
+    <span>ProMotion 120 Hz</span>
+    <span>Titanium frame</span>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+  // ── Live clock ────────────────────────────────────────────────
+  const clockEl = document.getElementById('clock');
+  function updateClock() {
+    const now = new Date();
+    const h = now.getHours();
+    const m = String(now.getMinutes()).padStart(2, '0');
+    clockEl.textContent = `${h}:${m}`;
+  }
+  updateClock();
+  setInterval(updateClock, 10000);
+
+  // ── Phone wrapper & state ─────────────────────────────────────
+  const wrapper   = document.getElementById('phoneWrapper');
+  const btnFlat   = document.getElementById('btnFlat');
+  const btnLand   = document.getElementById('btnLandscape');
+  const btnSpin   = document.getElementById('btnSpin');
+  let isFlat      = false;
+  let isLandscape = false;
+  let isSpinning  = false;
+  let spinAngle   = 0;
+  let spinRaf     = null;
+
+  // Tilt on mouse move (desktop)
+  const scene = wrapper.closest('.scene');
+  scene.addEventListener('mousemove', e => {
+    if (isFlat || isLandscape || isSpinning) return;
+    const rect = scene.getBoundingClientRect();
+    const cx = rect.left + rect.width  / 2;
+    const cy = rect.top  + rect.height / 2;
+    const dx = (e.clientX - cx) / (rect.width  / 2);   // –1 … +1
+    const dy = (e.clientY - cy) / (rect.height / 2);
+    const rx = -dy * 14;   // tilt X
+    const ry =  dx * 22;   // tilt Y
+    wrapper.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+    wrapper.style.filter    = `drop-shadow(${-dx*20}px ${-dy*10}px 60px rgba(0,0,0,.6))
+                                drop-shadow(0 0 40px rgba(110,142,251,.3))`;
+  });
+
+  scene.addEventListener('mouseleave', () => {
+    if (!isFlat && !isLandscape && !isSpinning) {
+      wrapper.style.transform = '';
+      wrapper.style.filter    = '';
+    }
+  });
+
+  // Touch tilt
+  scene.addEventListener('touchmove', e => {
+    if (isFlat || isLandscape || isSpinning) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    const rect = scene.getBoundingClientRect();
+    const dx = (t.clientX - rect.left - rect.width  / 2) / (rect.width  / 2);
+    const dy = (t.clientY - rect.top  - rect.height / 2) / (rect.height / 2);
+    wrapper.style.transform = `rotateX(${-dy*14}deg) rotateY(${dx*22}deg)`;
+  }, { passive: false });
+
+  // Click: toggle flat
+  wrapper.addEventListener('click', () => {
+    if (isSpinning) return;
+    isFlat = !isFlat;
+    isLandscape = false;
+    wrapper.classList.toggle('flat', isFlat);
+    wrapper.classList.remove('landscape');
+    wrapper.style.transform = '';
+    wrapper.style.filter    = '';
+    btnFlat.classList.toggle('active', isFlat);
+    btnLand.classList.remove('active');
+  });
+
+  // Flat button
+  btnFlat.addEventListener('click', e => {
+    e.stopPropagation();
+    stopSpin();
+    isFlat = !isFlat;
+    isLandscape = false;
+    wrapper.classList.toggle('flat', isFlat);
+    wrapper.classList.remove('landscape');
+    wrapper.style.transform = '';
+    wrapper.style.filter    = '';
+    btnFlat.classList.toggle('active', isFlat);
+    btnLand.classList.remove('active');
+  });
+
+  // Landscape button
+  btnLand.addEventListener('click', e => {
+    e.stopPropagation();
+    stopSpin();
+    isLandscape = !isLandscape;
+    isFlat = false;
+    wrapper.classList.toggle('landscape', isLandscape);
+    wrapper.classList.remove('flat');
+    wrapper.style.transform = '';
+    wrapper.style.filter    = '';
+    btnLand.classList.toggle('active', isLandscape);
+    btnFlat.classList.remove('active');
+  });
+
+  // Spin button
+  btnSpin.addEventListener('click', e => {
+    e.stopPropagation();
+    if (isSpinning) { stopSpin(); return; }
+    isFlat = false; isLandscape = false;
+    wrapper.classList.remove('flat', 'landscape');
+    isSpinning = true;
+    btnSpin.classList.add('active');
+    btnFlat.classList.remove('active');
+    btnLand.classList.remove('active');
+    spinAngle = 0;
+    (function animate() {
+      spinAngle = (spinAngle + 1.5) % 360;
+      wrapper.style.transform = `rotateY(${spinAngle}deg) rotateX(4deg)`;
+      spinRaf = requestAnimationFrame(animate);
+    })();
+  });
+
+  function stopSpin() {
+    if (!isSpinning) return;
+    isSpinning = false;
+    cancelAnimationFrame(spinRaf);
+    wrapper.style.transform = '';
+    wrapper.style.filter    = '';
+    btnSpin.classList.remove('active');
+  }
+
+  // ── Dynamic Island animation on app tap ───────────────────────
+  const island = document.getElementById('island');
+  document.querySelectorAll('.app').forEach(app => {
+    app.addEventListener('click', e => {
+      e.stopPropagation();
+      island.style.width  = '200px';
+      island.style.height = '44px';
+      island.style.borderRadius = '24px';
+      setTimeout(() => {
+        island.style.width  = '';
+        island.style.height = '';
+        island.style.borderRadius = '';
+      }, 1800);
+    });
+  });
+
+  // ── Color swatches ────────────────────────────────────────────
+  const iphone = document.getElementById('iphone');
+  const colorMap = {
+    black:    ['#1a1a1a', '#2e2e2e', '#3d3d3d'],
+    silver:   ['#c8c8c8', '#d8d8d8', '#f0f0f0'],
+    gold:     ['#8a6a30', '#c8a96e', '#f0d08a'],
+    blue:     ['#1a2a4a', '#3a5f8a', '#5a7aaa'],
+    titanium: ['#5a5048', '#8a8070', '#b0a898'],
+  };
+
+  document.querySelectorAll('.color-swatch').forEach(swatch => {
+    swatch.addEventListener('click', () => {
+      document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+      swatch.classList.add('selected');
+      const [dark, mid, shine] = colorMap[swatch.dataset.color];
+      iphone.style.background = `linear-gradient(160deg, ${shine} 0%, ${mid} 40%, ${dark} 100%)`;
+      document.documentElement.style.setProperty('--btn',      mid);
+      document.documentElement.style.setProperty('--btn-edge', dark);
+      document.documentElement.style.setProperty('--frame',    mid);
+      document.documentElement.style.setProperty('--frame-edge', dark);
+      document.documentElement.style.setProperty('--frame-shine', shine);
+    });
+  });
+</script>
+</body>
+</html>
