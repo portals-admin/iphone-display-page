@@ -15,3 +15,4 @@ Open `index.html` in any modern web browser — no build step or dependencies re
 - iPhone visual mockup
 - Responsive design
 - Pure HTML/CSS, no frameworks
+- No installation needed — just open and go
