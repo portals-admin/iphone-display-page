@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>A Billion iPhones</title>
+  <title>100 iPhones</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -94,7 +94,7 @@
 <canvas id="canvas"></canvas>
 
 <div id="hud">
-  <div id="title">A Billion iPhones</div>
+  <div id="title">100 iPhones</div>
   <div id="counter-wrap">
     <div id="counter">0</div>
     <div id="counter-label">iPhones spawned</div>
@@ -111,7 +111,7 @@
   const progressBar = document.getElementById('progress-bar');
   const milestoneEl = document.getElementById('milestone');
 
-  const BILLION = 1_000_000_000;
+  const BILLION = 100;
 
   // ── Resize ────────────────────────────────────────────────────
   let W, H;
@@ -196,7 +196,7 @@
     '#6e8efb','#a777e3','#3de0c8',// Glow variants
   ];
 
-  const MAX_PARTICLES = 800;
+  const MAX_PARTICLES = 100;
   const particles = [];
 
   function spawnParticle() {
@@ -252,11 +252,7 @@
 
   // ── Counter & milestones ──────────────────────────────────────
   let spawned = 0;
-  const MILESTONES = [
-    1_000, 10_000, 100_000,
-    1_000_000, 10_000_000, 100_000_000,
-    500_000_000, 1_000_000_000,
-  ];
+  const MILESTONES = [10, 25, 50, 75, 100];
   let nextMilestoneIdx = 0;
   let milestoneTimer = 0;
 
@@ -278,8 +274,8 @@
   let spawnAccum = 0;
 
   function getSpawnRate() {
-    // Ramp: 5/frame → 60/frame over ~3000 frames
-    return Math.min(5 + frame * 0.018, 60);
+    // ~1 phone per 10 frames, so 100 phones over ~1000 frames
+    return 0.1;
   }
 
   // ── Starfield background ──────────────────────────────────────
@@ -351,7 +347,7 @@
     // HUD: counter
     counterEl.textContent = formatNum(spawned);
     if (spawned >= BILLION) {
-      counterEl.textContent = '1,000,000,000';
+      counterEl.textContent = '100';
     }
 
     // Progress bar
