@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>A Billion iPhones</title>
+  <title>A Billion Phones</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -87,6 +87,20 @@
       opacity: 0;
       transition: opacity .4s ease;
     }
+
+    #phone-legend {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      font-size: .6rem;
+      color: rgba(255,255,255,.3);
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 10;
+      line-height: 1.6;
+      text-align: right;
+    }
   </style>
 </head>
 <body>
@@ -94,15 +108,16 @@
 <canvas id="canvas"></canvas>
 
 <div id="hud">
-  <div id="title">A Billion iPhones</div>
+  <div id="title">A Billion Phones</div>
   <div id="counter-wrap">
     <div id="counter">0</div>
-    <div id="counter-label">iPhones spawned</div>
+    <div id="counter-label">phones spawned</div>
   </div>
 </div>
 
 <div id="progress-bar" style="width:0%"></div>
 <div id="milestone"></div>
+<div id="phone-legend">Tap to burst</div>
 
 <script>
   const canvas = document.getElementById('canvas');
@@ -124,55 +139,7 @@
   resize();
   window.addEventListener('resize', resize);
 
-  // ── iPhone mini-drawing ───────────────────────────────────────
-  function drawPhone(x, y, w, h, angle, alpha, color) {
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-
-    const r = w * 0.22;
-
-    // Frame
-    ctx.beginPath();
-    roundRect(ctx, -w/2, -h/2, w, h, r);
-    ctx.fillStyle = color;
-    ctx.fill();
-
-    // Screen (inset)
-    const sp = w * 0.1;
-    const sr = r * 0.6;
-    ctx.beginPath();
-    roundRect(ctx, -w/2 + sp, -h/2 + sp, w - sp*2, h - sp*2, sr);
-    ctx.fillStyle = '#000d1a';
-    ctx.fill();
-
-    // Screen glow
-    ctx.beginPath();
-    roundRect(ctx, -w/2 + sp, -h/2 + sp, w - sp*2, h - sp*2, sr);
-    const grad = ctx.createRadialGradient(0, -h*0.1, 0, 0, 0, h*0.4);
-    grad.addColorStop(0, 'rgba(110,142,251,0.35)');
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    // Dynamic island pill
-    const pW = w * 0.35, pH = h * 0.045;
-    ctx.beginPath();
-    roundRect(ctx, -pW/2, -h/2 + sp + pH * 0.6, pW, pH, pH/2);
-    ctx.fillStyle = '#000';
-    ctx.fill();
-
-    // Home indicator
-    const hiW = w * 0.3, hiH = h * 0.015;
-    ctx.beginPath();
-    roundRect(ctx, -hiW/2, h/2 - sp - hiH*2, hiW, hiH, hiH/2);
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.fill();
-
-    ctx.restore();
-  }
-
+  // ── Utility ───────────────────────────────────────────────────
   function roundRect(ctx, x, y, w, h, r) {
     ctx.moveTo(x + r, y);
     ctx.lineTo(x + w - r, y);
@@ -186,18 +153,211 @@
     ctx.closePath();
   }
 
-  // ── Particle system ───────────────────────────────────────────
-  const COLORS = [
-    '#1a1a1a','#2a2a2a',          // Black Titanium
-    '#c8c8c8','#e8e8e8',          // White Titanium
-    '#c8a96e','#f0d08a',          // Desert Gold
-    '#3a5f8a','#5a8aba',          // Blue Titanium
-    '#8a8070','#b0a898',          // Natural Titanium
-    '#6e8efb','#a777e3','#3de0c8',// Glow variants
+  // ── Phone drawers ─────────────────────────────────────────────
+
+  // Type 0: Modern slab (iPhone / flagship Android style)
+  function drawSlabPhone(x, y, w, h, color) {
+    const r = w * 0.18;
+    ctx.beginPath(); roundRect(ctx, -w/2, -h/2, w, h, r);
+    ctx.fillStyle = color; ctx.fill();
+    // bezels
+    ctx.beginPath(); roundRect(ctx, -w/2+1, -h/2+1, w-2, h-2, r);
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1; ctx.stroke();
+    // screen
+    const sp = w * 0.09, sr = r * 0.55;
+    ctx.beginPath(); roundRect(ctx, -w/2+sp, -h/2+sp, w-sp*2, h-sp*2, sr);
+    ctx.fillStyle = '#000d1a'; ctx.fill();
+    // screen glow
+    const grd = ctx.createRadialGradient(0, -h*0.1, 0, 0, 0, h*0.45);
+    grd.addColorStop(0, 'rgba(110,142,251,0.4)');
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath(); roundRect(ctx, -w/2+sp, -h/2+sp, w-sp*2, h-sp*2, sr);
+    ctx.fillStyle = grd; ctx.fill();
+    // dynamic island
+    const pW = w*0.32, pH = h*0.042;
+    ctx.beginPath(); roundRect(ctx, -pW/2, -h/2+sp+pH*0.55, pW, pH, pH/2);
+    ctx.fillStyle = '#000'; ctx.fill();
+    // home bar
+    const hiW = w*0.28, hiH = h*0.013;
+    ctx.beginPath(); roundRect(ctx, -hiW/2, h/2-sp-hiH*2.2, hiW, hiH, hiH/2);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fill();
+  }
+
+  // Type 1: Android with circular camera bump
+  function drawAndroid(x, y, w, h, color) {
+    const r = w * 0.15;
+    ctx.beginPath(); roundRect(ctx, -w/2, -h/2, w, h, r);
+    ctx.fillStyle = color; ctx.fill();
+    // screen (taller, thinner bezels)
+    const sp = w * 0.07, sr = r * 0.5;
+    ctx.beginPath(); roundRect(ctx, -w/2+sp, -h/2+sp*0.6, w-sp*2, h-sp*1.4, sr);
+    ctx.fillStyle = '#050510'; ctx.fill();
+    // screen glow (green-tinted)
+    const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, h*0.4);
+    grd.addColorStop(0, 'rgba(60,220,140,0.35)');
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath(); roundRect(ctx, -w/2+sp, -h/2+sp*0.6, w-sp*2, h-sp*1.4, sr);
+    ctx.fillStyle = grd; ctx.fill();
+    // punch-hole selfie cam
+    ctx.beginPath();
+    ctx.arc(0, -h/2+sp*0.6+h*0.065, w*0.07, 0, Math.PI*2);
+    ctx.fillStyle = '#000'; ctx.fill();
+    // camera island (back — shown as bump on top)
+    const camX = w*0.08, camY = -h/2 + h*0.06;
+    ctx.beginPath();
+    ctx.arc(camX, camY, w*0.14, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(camX, camY, w*0.085, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(30,30,60,0.8)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(camX, camY, w*0.045, 0, Math.PI*2);
+    ctx.fillStyle = '#001530'; ctx.fill();
+    ctx.beginPath(); ctx.arc(camX-w*0.02, camY-w*0.02, w*0.015, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fill();
+    // fingerprint sensor on back (bottom area)
+    ctx.beginPath();
+    ctx.arc(-w*0.08, h/2-sp*0.7, w*0.1, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fill();
+  }
+
+  // Type 2: Flip phone (open)
+  function drawFlipPhone(x, y, w, h, color) {
+    const halfH = h * 0.48;
+    const r = w * 0.13;
+    // top half
+    ctx.beginPath(); roundRect(ctx, -w/2, -h/2, w, halfH, r);
+    ctx.fillStyle = color; ctx.fill();
+    // top screen
+    const sp = w * 0.1;
+    ctx.beginPath(); roundRect(ctx, -w/2+sp, -h/2+sp*0.7, w-sp*2, halfH-sp*1.4, r*0.5);
+    ctx.fillStyle = '#00050a'; ctx.fill();
+    const grd2 = ctx.createRadialGradient(0, -h/4, 0, 0, -h/4, halfH*0.5);
+    grd2.addColorStop(0, 'rgba(200,120,255,0.35)');
+    grd2.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath(); roundRect(ctx, -w/2+sp, -h/2+sp*0.7, w-sp*2, halfH-sp*1.4, r*0.5);
+    ctx.fillStyle = grd2; ctx.fill();
+    // hinge gap
+    ctx.beginPath(); ctx.rect(-w/2, -h/2+halfH, w, h*0.04);
+    ctx.fillStyle = '#111'; ctx.fill();
+    // bottom half
+    ctx.beginPath(); roundRect(ctx, -w/2, -h/2+halfH+h*0.04, w, halfH, r);
+    ctx.fillStyle = color; ctx.fill();
+    // keypad dots
+    const btnS = w * 0.16, gap = w * 0.06;
+    const startX = -btnS - gap/2, startY = -h/2+halfH+h*0.04+sp;
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const bx = startX + col*(btnS+gap) + btnS/2;
+        const by = startY + row*(btnS*0.7+gap);
+        ctx.beginPath(); roundRect(ctx, bx-btnS/2, by, btnS, btnS*0.7, 3);
+        ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fill();
+      }
+    }
+  }
+
+  // Type 3: Nokia brick (candy bar)
+  function drawBrick(x, y, w, h, color) {
+    const r = w * 0.2;
+    ctx.beginPath(); roundRect(ctx, -w/2, -h/2, w, h, r);
+    ctx.fillStyle = color; ctx.fill();
+    // small screen (top 40%)
+    const sp = w * 0.12;
+    ctx.beginPath(); roundRect(ctx, -w/2+sp, -h/2+sp, w-sp*2, h*0.38, r*0.4);
+    ctx.fillStyle = '#1a2a00'; ctx.fill();
+    // green LCD glow
+    const grd3 = ctx.createLinearGradient(0, -h/2+sp, 0, -h/2+sp+h*0.38);
+    grd3.addColorStop(0, 'rgba(80,180,0,0.5)');
+    grd3.addColorStop(1, 'rgba(40,100,0,0.3)');
+    ctx.beginPath(); roundRect(ctx, -w/2+sp, -h/2+sp, w-sp*2, h*0.38, r*0.4);
+    ctx.fillStyle = grd3; ctx.fill();
+    // nav d-pad circle
+    const cy2 = -h/2+sp+h*0.38+h*0.1;
+    ctx.beginPath(); ctx.arc(0, cy2, w*0.18, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(0, cy2, w*0.08, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fill();
+    // number grid (2 rows)
+    const bW = w*0.22, bH = h*0.072, bGap = w*0.05;
+    const bStartX = -bW-bGap/2, bStartY = cy2+w*0.25;
+    for (let row = 0; row < 2; row++) {
+      for (let col = 0; col < 3; col++) {
+        const bx = bStartX + col*(bW+bGap);
+        const by = bStartY + row*(bH+bGap*0.5);
+        ctx.beginPath(); roundRect(ctx, bx, by, bW, bH, 4);
+        ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fill();
+      }
+    }
+  }
+
+  // Type 4: Foldable (book style, half-open)
+  function drawFoldable(x, y, w, h, color) {
+    const r = w * 0.1;
+    const halfW = w * 0.47;
+    // left panel
+    ctx.beginPath(); roundRect(ctx, -w/2, -h/2, halfW, h, r);
+    ctx.fillStyle = color; ctx.fill();
+    ctx.beginPath(); roundRect(ctx, -w/2+w*0.06, -h/2+w*0.06, halfW-w*0.12, h-w*0.12, r*0.5);
+    ctx.fillStyle = '#020812'; ctx.fill();
+    const gL = ctx.createLinearGradient(-w/2, 0, 0, 0);
+    gL.addColorStop(0, 'rgba(61,224,200,0.3)');
+    gL.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath(); roundRect(ctx, -w/2+w*0.06, -h/2+w*0.06, halfW-w*0.12, h-w*0.12, r*0.5);
+    ctx.fillStyle = gL; ctx.fill();
+    // right panel (slightly lighter = edge catching light)
+    const rPanel = w - halfW - w*0.06;
+    ctx.beginPath(); roundRect(ctx, halfW-w*0.06, -h/2, rPanel, h, r);
+    const gR = ctx.createLinearGradient(halfW, 0, w/2, 0);
+    gR.addColorStop(0, 'rgba(0,0,0,0.8)');
+    gR.addColorStop(0.5, shadeColor(color, 30));
+    gR.addColorStop(1, 'rgba(0,0,0,0.5)');
+    ctx.fillStyle = gR; ctx.fill();
+    // spine
+    ctx.beginPath(); ctx.rect(halfW-w*0.06, -h/2, w*0.06, h);
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fill();
+  }
+
+  function shadeColor(hex, pct) {
+    let n = parseInt(hex.replace('#',''), 16);
+    const r = Math.min(255, ((n>>16)&0xff)+pct);
+    const g = Math.min(255, ((n>>8)&0xff)+pct);
+    const b = Math.min(255, (n&0xff)+pct);
+    return `rgb(${r},${g},${b})`;
+  }
+
+  // ── Dispatch ──────────────────────────────────────────────────
+  function drawPhone(x, y, w, h, angle, alpha, color, type) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    switch (type) {
+      case 0: drawSlabPhone(x, y, w, h, color); break;
+      case 1: drawAndroid(x, y, w, h, color);   break;
+      case 2: drawFlipPhone(x, y, w, h, color); break;
+      case 3: drawBrick(x, y, w, h, color);     break;
+      case 4: drawFoldable(x, y, w, h, color);  break;
+    }
+    ctx.restore();
+  }
+
+  // ── Colors per type ───────────────────────────────────────────
+  const TYPE_COLORS = [
+    // Slab (iPhones / flagships)
+    ['#1a1a1a','#2a2a2a','#c8c8c8','#e8e8e8','#c8a96e','#3a5f8a','#6e8efb','#a777e3'],
+    // Android
+    ['#1a2a1a','#0a1a0a','#102010','#1f3a2a','#00274d','#001a33','#3de0c8','#22aa7a'],
+    // Flip
+    ['#1a0a2a','#2a0a3a','#3a006a','#550080','#880088','#660044','#a777e3','#cc55cc'],
+    // Brick
+    ['#003366','#004488','#003355','#002244','#003300','#004400','#1155aa','#336699'],
+    // Foldable
+    ['#101010','#181818','#0a0a14','#141420','#10101a','#0d0d18','#8888cc','#6666bb'],
   ];
 
-  const MAX_PARTICLES = 800;
+  // ── Particle system ───────────────────────────────────────────
+  const MAX_PARTICLES = 900;
   const particles = [];
+
+  function randType() { return Math.floor(Math.random() * 5); }
 
   function spawnParticle() {
     const angle = Math.random() * Math.PI * 2;
@@ -205,6 +365,8 @@
     const size  = (10 + Math.random() * 28) * devicePixelRatio;
     const cx = W / 2 + (Math.random() - 0.5) * W * 0.3;
     const cy = H / 2 + (Math.random() - 0.5) * H * 0.3;
+    const type = randType();
+    const colors = TYPE_COLORS[type];
 
     particles.push({
       x: cx, y: cy,
@@ -218,7 +380,8 @@
       fadeIn: 0.04 + Math.random() * 0.04,
       life: 0,
       maxLife: 120 + Math.random() * 200,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      color: colors[Math.floor(Math.random() * colors.length)],
+      type,
     });
   }
 
@@ -228,6 +391,8 @@
       const angle = Math.random() * Math.PI * 2;
       const speed = (1 + Math.random() * 4) * devicePixelRatio;
       const size  = (8 + Math.random() * 22) * devicePixelRatio;
+      const type = randType();
+      const colors = TYPE_COLORS[type];
       particles.push({
         x: cx * devicePixelRatio,
         y: cy * devicePixelRatio,
@@ -240,15 +405,17 @@
         fadeIn: 0.08,
         life: 0,
         maxLife: 80 + Math.random() * 120,
-        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        color: colors[Math.floor(Math.random() * colors.length)],
+        type,
       });
     }
   }
 
   canvas.addEventListener('click', e => burst(e.clientX, e.clientY, 40));
   canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
     for (const t of e.touches) burst(t.clientX, t.clientY, 30);
-  });
+  }, { passive: false });
 
   // ── Counter & milestones ──────────────────────────────────────
   let spawned = 0;
@@ -268,7 +435,7 @@
   }
 
   function showMilestone(n) {
-    milestoneEl.textContent = `🎉 ${n.toLocaleString()} iPhones spawned!`;
+    milestoneEl.textContent = `📱 ${n.toLocaleString()} phones spawned!`;
     milestoneEl.style.opacity = '1';
     milestoneTimer = 120;
   }
@@ -278,7 +445,6 @@
   let spawnAccum = 0;
 
   function getSpawnRate() {
-    // Ramp: 5/frame → 60/frame over ~3000 frames
     return Math.min(5 + frame * 0.018, 60);
   }
 
@@ -316,7 +482,6 @@
         if (particles.length < MAX_PARTICLES) spawnParticle();
       }
 
-      // Milestone check
       if (nextMilestoneIdx < MILESTONES.length && spawned >= MILESTONES[nextMilestoneIdx]) {
         showMilestone(MILESTONES[nextMilestoneIdx]);
         nextMilestoneIdx++;
@@ -329,10 +494,9 @@
       p.life++;
       p.x  += p.vx;
       p.y  += p.vy;
-      p.vy += 0.015 * devicePixelRatio; // gentle gravity
+      p.vy += 0.015 * devicePixelRatio;
       p.rot += p.rotV;
 
-      // Fade in / fade out
       const fadeOutStart = p.maxLife * 0.7;
       if (p.life < p.maxLife * 0.2) {
         p.alpha = Math.min(p.alpha + p.fadeIn, 0.9);
@@ -345,18 +509,14 @@
         continue;
       }
 
-      drawPhone(p.x, p.y, p.w, p.h, p.rot, p.alpha, p.color);
+      drawPhone(p.x, p.y, p.w, p.h, p.rot, p.alpha, p.color, p.type);
     }
 
-    // HUD: counter
-    counterEl.textContent = formatNum(spawned);
-    if (spawned >= BILLION) {
-      counterEl.textContent = '1,000,000,000';
-    }
+    // HUD
+    counterEl.textContent = spawned >= BILLION ? '1,000,000,000' : formatNum(spawned);
 
     // Progress bar
-    const pct = Math.min(spawned / BILLION * 100, 100);
-    progressBar.style.width = pct + '%';
+    progressBar.style.width = Math.min(spawned / BILLION * 100, 100) + '%';
 
     // Milestone fade out
     if (milestoneTimer > 0) {
